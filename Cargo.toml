@@ -1,0 +1,9 @@
+[package]
+name = "openapi-schema"
+version = "0.1.0"
+authors = ["boxdot <d@zerovolt.org>"]
+edition = "2018"
+
+[dependencies]
+openapi = { git = "https://github.com/boxdot/openapi", branch = "security-oauth2" }
+serde = { version = "1.0", features = ["derive"] }
