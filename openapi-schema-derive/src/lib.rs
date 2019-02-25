@@ -5,7 +5,10 @@ extern crate proc_macro;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Field, Fields, Type};
+use syn::{
+    parse_macro_input, AttrStyle, Attribute, Data, DeriveInput, Field, Fields, Lit, Meta,
+    MetaNameValue, Type,
+};
 
 #[proc_macro_derive(OpenapiSchema)]
 pub fn openapi_schema_derive(input: TokenStream) -> TokenStream {
@@ -14,15 +17,12 @@ pub fn openapi_schema_derive(input: TokenStream) -> TokenStream {
 }
 
 fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
-    // use openapi::v3_0::{Spec, Schema, };
-
     let properties: Vec<proc_macro2::TokenStream> = match input.data {
         Data::Struct(ref s) => match s.fields {
             Fields::Named(ref fields) => fields
                 .named
                 .iter()
                 .map(|field| {
-                    println!("{:#?}", field);
                     let field_name = &field.ident;
                     let ty = &field.ty;
                     let optional = is_optional(&field);
@@ -42,6 +42,8 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
     };
 
     let name = &input.ident;
+    let (title, desc) = doc_string(&input.attrs);
+
     let gen = quote! {
         impl OpenapiSchema for #name {
             fn generate_schema(spec: &mut openapi::v3_0::Spec) ->
@@ -88,6 +90,8 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
                     };
 
                     let schema = Schema {
+                        title: #title,
+                        description: #desc,
                         properties,
                         required,
                         ..openapi::v3_0::Schema::default()
@@ -113,4 +117,38 @@ fn is_optional(field: &Field) -> bool {
         }
         _ => false,
     }
+}
+
+/// Returns the summary of the doc (first paragraph) and the optional body (other paragraphs).
+fn doc_string(attrs: &[Attribute]) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
+    let lines: Vec<String> = attrs
+        .iter()
+        .filter_map(|attr| {
+            if attr.style == AttrStyle::Outer && attr.path.is_ident("doc") {
+                let meta = attr.interpret_meta();
+                match meta {
+                    Some(Meta::NameValue(MetaNameValue {
+                        lit: Lit::Str(ref s),
+                        ..
+                    })) => Some(s.value().trim().into()),
+                    _ => None,
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
+    let doc = lines.join("\n");
+
+    let mut split = doc.splitn(2, "\n\n");
+    (
+        split
+            .next()
+            .map(|s| quote!(Some(#s.into())))
+            .unwrap_or(quote!(None)),
+        split
+            .next()
+            .map(|s| quote!(Some(#s.into())))
+            .unwrap_or(quote!(None)),
+    )
 }

@@ -1,6 +1,8 @@
 use openapi::v3_0::{ObjectOrReference, Spec};
 use openapi_schema::OpenapiSchema;
 
+/// Pet Tag
+///
 /// A tag for a pet
 #[allow(dead_code)]
 #[derive(OpenapiSchema)]
@@ -23,6 +25,9 @@ fn test_simple_derive() {
         ObjectOrReference::Object(ref tag) => tag,
         _ => panic!("unexpected reference"),
     };
+
+    assert_eq!(tag.title, Some("Pet Tag".into()));
+    assert_eq!(tag.description, Some("A tag for a pet".into()));
 
     let properties = tag.properties.as_ref().unwrap();
 

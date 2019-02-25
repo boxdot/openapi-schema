@@ -21,7 +21,7 @@ impl OpenapiSchema for String {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
             schema_type: Some("string".into()),
-            ..Schema::default()
+            ..Default::default()
         })
     }
 }
@@ -31,7 +31,7 @@ impl OpenapiSchema for i64 {
         ObjectOrReference::Object(Schema {
             schema_type: Some("number".into()),
             format: Some("int64".into()),
-            ..Schema::default()
+            ..Default::default()
         })
     }
 }
