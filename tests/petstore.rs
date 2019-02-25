@@ -2,14 +2,15 @@ use openapi::v3_0::{ObjectOrReference, Spec};
 use openapi_schema::OpenapiSchema;
 
 /// A tag for a pet
+#[allow(dead_code)]
 #[derive(OpenapiSchema)]
 struct Tag {
-    id: Option<i64>,
+    id: i64,
     name: Option<String>,
 }
 
 #[test]
-fn test_derive() {
+fn test_simple_derive() {
     let mut spec = Spec::default();
     Tag::generate_schema(&mut spec);
 
@@ -34,5 +35,5 @@ fn test_derive() {
     let name = properties.get("name").unwrap();
     assert_eq!(name.schema_type, Some("string".into()));
 
-    assert_eq!(tag.required, None);
+    assert_eq!(tag.required, Some(vec![String::from("id")]));
 }

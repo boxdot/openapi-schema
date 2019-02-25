@@ -3,8 +3,9 @@
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
+use proc_macro2::{Ident, Span};
 use quote::quote;
-use syn::{parse_macro_input, Data, DeriveInput, Fields};
+use syn::{parse_macro_input, Data, DeriveInput, Field, Fields, Type};
 
 #[proc_macro_derive(OpenapiSchema)]
 pub fn openapi_schema_derive(input: TokenStream) -> TokenStream {
@@ -21,11 +22,16 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
                 .named
                 .iter()
                 .map(|field| {
+                    println!("{:#?}", field);
                     let field_name = &field.ident;
                     let ty = &field.ty;
+                    let optional = is_optional(&field);
                     let gen = quote! {
-                        (stringify!(#field_name),
-                        <#ty as OpenapiSchema>::generate_schema(spec)),
+                        (
+                            stringify!(#field_name),
+                            <#ty as OpenapiSchema>::generate_schema(spec),
+                            #optional,
+                        ),
                     };
                     gen.into()
                 })
@@ -53,23 +59,37 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
                     .unwrap_or(false);
 
                 if !already_generated {
-                    let properties = vec![#(#properties)*];
-                    let properties = properties
-                        .into_iter()
-                        .map(|(name, prop)| {
-                            let prop_schema = match prop {
-                                ObjectOrReference::Object(schema) => schema,
-                                ObjectOrReference::Ref{ ref_path } => Schema {
-                                    ref_path: Some(ref_path),
-                                    ..Schema::default()
-                                }
-                            };
-                            (String::from(name), prop_schema)
-                        })
-                        .collect();
+                    let mut properties = std::collections::BTreeMap::new();
+                    let mut required = Vec::new();
+                    for (name, prop, optional) in vec![#(#properties)*] {
+                        let prop_schema = match prop {
+                            ObjectOrReference::Object(schema) => schema,
+                            ObjectOrReference::Ref{ ref_path } => Schema {
+                                ref_path: Some(ref_path),
+                                ..Schema::default()
+                            }
+                        };
+                        properties.insert(String::from(name), prop_schema);
+                        if !optional {
+                            required.push(String::from(name));
+                        }
+                    }
+
+                    let properties = if !properties.is_empty() {
+                        Some(properties)
+                    } else {
+                        None
+                    };
+
+                    let required = if !required.is_empty() {
+                        Some(required)
+                    } else {
+                        None
+                    };
 
                     let schema = Schema {
-                        properties: Some(properties),
+                        properties,
+                        required,
                         ..openapi::v3_0::Schema::default()
                     };
 
@@ -83,4 +103,14 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
         }
     };
     gen.into()
+}
+
+fn is_optional(field: &Field) -> bool {
+    match &field.ty {
+        Type::Path(type_path) => {
+            let option_ident = Ident::new("Option", Span::call_site());
+            type_path.path.segments.len() == 1 && type_path.path.segments[0].ident == option_ident
+        }
+        _ => false,
+    }
 }
