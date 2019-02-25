@@ -6,8 +6,8 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
 use syn::{
-    parse_macro_input, AttrStyle, Attribute, Data, DeriveInput, Field, Fields, Lit, Meta,
-    MetaNameValue, Type,
+    parse_macro_input, AttrStyle, Attribute, Data, DataStruct, DeriveInput, Field, Fields, Lit,
+    Meta, MetaNameValue, Type,
 };
 
 #[proc_macro_derive(OpenapiSchema)]
@@ -17,32 +17,9 @@ pub fn openapi_schema_derive(input: TokenStream) -> TokenStream {
 }
 
 fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
-    let properties: Vec<proc_macro2::TokenStream> = match input.data {
-        Data::Struct(ref s) => match s.fields {
-            Fields::Named(ref fields) => fields
-                .named
-                .iter()
-                .map(|field| {
-                    let field_name = &field.ident;
-                    let ty = &field.ty;
-                    let optional = is_optional(&field);
-                    let gen = quote! {
-                        (
-                            stringify!(#field_name),
-                            <#ty as OpenapiSchema>::generate_schema(spec),
-                            #optional,
-                        ),
-                    };
-                    gen.into()
-                })
-                .collect(),
-            _ => unimplemented!(),
-        },
-        _ => unimplemented!(),
-    };
-
     let name = &input.ident;
     let (title, desc) = doc_string(&input.attrs);
+    let properties = collect_properties(&input.data);
 
     let gen = quote! {
         impl OpenapiSchema for #name {
@@ -107,6 +84,32 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
         }
     };
     gen.into()
+}
+
+fn collect_properties(data: &Data) -> Vec<proc_macro2::TokenStream> {
+    match data {
+        Data::Struct(DataStruct {
+            fields: Fields::Named(ref fields),
+            ..
+        }) => fields
+            .named
+            .iter()
+            .map(|field| {
+                let field_name = &field.ident;
+                let ty = &field.ty;
+                let optional = is_optional(&field);
+                let gen = quote! {
+                    (
+                        stringify!(#field_name),
+                        <#ty as OpenapiSchema>::generate_schema(spec),
+                        #optional,
+                    ),
+                };
+                gen
+            })
+            .collect(),
+        _ => panic!("unsupported data"),
+    }
 }
 
 fn is_optional(field: &Field) -> bool {
