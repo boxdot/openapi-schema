@@ -4,6 +4,7 @@ extern crate openapi_schema_derive;
 pub use openapi_schema_derive::*;
 
 use openapi::v3_0::{ObjectOrReference, Schema, Spec};
+use serde_json::{Number, Value};
 
 pub trait OpenapiSchema {
     fn generate_schema(spec: &mut Spec) -> ObjectOrReference<Schema>;
@@ -23,6 +24,47 @@ impl OpenapiSchema for i64 {
         ObjectOrReference::Object(Schema {
             schema_type: Some("number".into()),
             format: Some("int64".into()),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for u64 {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("number".into()),
+            format: Some("int64".into()),
+            minimum: Some(Value::Number(Number::from(0))),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for i32 {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("number".into()),
+            format: Some("int32".into()),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for u32 {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("number".into()),
+            format: Some("int32".into()),
+            minimum: Some(Value::Number(Number::from(0))),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for bool {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("boolean".into()),
             ..Default::default()
         })
     }

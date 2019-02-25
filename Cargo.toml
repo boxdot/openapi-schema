@@ -5,9 +5,7 @@ authors = ["boxdot <d@zerovolt.org>"]
 edition = "2018"
 
 [dependencies]
-openapi = { git = "https://github.com/boxdot/openapi", rev = "da19ea8354a260e59c5517cd61d1ad981a12bd35" }
-serde = { version = "1.0", features = ["derive"] }
+openapi = { git = "https://github.com/boxdot/openapi", rev = "e42474a" }
+# serde = { version = "1.0", features = ["derive"] }
 openapi-schema-derive = { path = "openapi-schema-derive" }
-
-[dev-dependencies]
 serde_json = "1.0"
