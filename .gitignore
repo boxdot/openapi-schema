@@ -1,4 +1,5 @@
 /target
 **/*.rs.bk
-openapi-schema-derive/target
 Cargo.lock
+openapi-schema-derive/target
+openapi-schema-derive/Cargo.lock
