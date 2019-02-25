@@ -4,14 +4,6 @@ extern crate openapi_schema_derive;
 pub use openapi_schema_derive::*;
 
 use openapi::v3_0::{ObjectOrReference, Schema, Spec};
-use serde::Serialize;
-
-use std::collections::BTreeMap;
-
-mod de;
-
-pub type Schemas = BTreeMap<String, openapi::v3_0::Schema>;
-pub use de::Error;
 
 pub trait OpenapiSchema {
     fn generate_schema(spec: &mut Spec) -> ObjectOrReference<Schema>;
@@ -65,9 +57,4 @@ where
             ..Schema::default()
         })
     }
-}
-
-pub fn to_schema<T: Serialize + Default>() -> Result<Schemas, Error> {
-    let t = T::default();
-    t.serialize(de::SchemaSerializer::default())
 }
