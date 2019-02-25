@@ -144,14 +144,10 @@ fn doc_string(attrs: &[Attribute]) -> (proc_macro2::TokenStream, proc_macro2::To
     let doc = lines.join("\n");
 
     let mut split = doc.splitn(2, "\n\n");
-    (
-        split
-            .next()
-            .map(|s| quote!(Some(#s.into())))
-            .unwrap_or(quote!(None)),
-        split
-            .next()
-            .map(|s| quote!(Some(#s.into())))
-            .unwrap_or(quote!(None)),
-    )
+    match (split.next(), split.next()) {
+        (Some(title), Some(desc)) => (quote!(Some(#title.into())), quote!(Some(#desc.into()))),
+        (Some(desc), None) => (quote!(None), quote!(Some(#desc.into()))),
+        (None, None) => (quote!(None), quote!(None)),
+        (None, _) => unreachable!(),
+    }
 }
