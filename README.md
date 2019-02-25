@@ -1,4 +1,4 @@
-# openapi-schema
+# openapi-schema [![build Status]][travis]
 
 [OpenAPI 3.0 Schema] generation library for Rust types.
 
@@ -88,3 +88,5 @@ for inclusion in this document by you, as defined in the Apache-2.0 license,
 shall be dual licensed as above, without any additional terms or conditions.
 
 [OpenAPI 3.0 Schema]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md#schemaObject
+[build Status]: https://travis-ci.com/boxdot/openapi-schema.svg?branch=master
+[travis]: https://travis-ci.com/boxdot/openapi-schema
