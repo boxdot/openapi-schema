@@ -1,6 +1,19 @@
 use openapi::v3_0::{ObjectOrReference, Spec};
 use openapi_schema::OpenapiSchema;
 
+/// A pet for sale in the pet store
+#[allow(dead_code)]
+#[derive(OpenapiSchema)]
+// #[serde(rename_all = "camelCase")]
+pub struct Pet {
+    id: Option<i64>,
+    category: Option<Category>,
+    name: String,
+    photo_urls: Vec<String>,
+    tags: Option<Vec<Tag>>,
+    status: Option<Status>,
+}
+
 /// Pet Tag
 ///
 /// A tag for a pet
@@ -12,15 +25,24 @@ struct Tag {
 }
 
 /// A category for a pet
-#[derive(OpenapiSchema)]
 #[allow(dead_code)]
+#[derive(OpenapiSchema)]
 struct Category {
     id: Option<i64>,
     name: Option<String>,
 }
 
+/// Pet status in the store
+#[allow(dead_code)]
+#[derive(OpenapiSchema)]
+enum Status {
+    Available,
+    Pending,
+    Sold,
+}
+
 #[test]
-fn test_simple_derive() {
+fn test_plain_struct_derive() {
     let mut spec = Spec::default();
     Tag::generate_schema(&mut spec);
     println!("{}", serde_json::to_string_pretty(&spec).unwrap());
@@ -71,4 +93,37 @@ fn test_simple_derive() {
     assert_eq!(name.schema_type, Some("string".into()));
 
     assert_eq!(cat.required, None);
+}
+
+#[test]
+fn test_trivial_enum_derive() {
+    let mut spec = Spec::default();
+    Status::generate_schema(&mut spec);
+    println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+
+    let schemas = spec.components.as_ref().unwrap().schemas.as_ref().unwrap();
+    let status = match schemas.get("Status") {
+        Some(ObjectOrReference::Object(ref status)) => status,
+        _ => panic!("unexpected reference"),
+    };
+
+    assert_eq!(status.description, Some("Pet status in the store".into()));
+    assert_eq!(status.schema_type, Some("string".into()));
+    assert_eq!(
+        status.enum_values,
+        Some(vec!["Available".into(), "Pending".into(), "Sold".into(),])
+    );
+}
+
+#[test]
+fn test_nested_struct_derive() {
+    let mut spec = Spec::default();
+    Pet::generate_schema(&mut spec);
+    println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+
+    let schemas = spec.components.as_ref().unwrap().schemas.as_ref().unwrap();
+    assert!(schemas.contains_key("Pet"));
+    assert!(schemas.contains_key("Category"));
+    assert!(schemas.contains_key("Tag"));
+    assert!(schemas.contains_key("Status"));
 }

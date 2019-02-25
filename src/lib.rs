@@ -45,58 +45,29 @@ where
     }
 }
 
+impl<T> OpenapiSchema for Vec<T>
+where
+    T: OpenapiSchema,
+{
+    fn generate_schema(spec: &mut Spec) -> ObjectOrReference<Schema> {
+        let reference = T::generate_schema(spec);
+        let items_schema = match reference {
+            ObjectOrReference::Object(schema) => schema,
+            ObjectOrReference::Ref { ref_path } => Schema {
+                ref_path: Some(ref_path),
+                ..Schema::default()
+            },
+        };
+
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("array".into()),
+            items: Some(Box::new(items_schema)),
+            ..Schema::default()
+        })
+    }
+}
+
 pub fn to_schema<T: Serialize + Default>() -> Result<Schemas, Error> {
     let t = T::default();
     t.serialize(de::SchemaSerializer::default())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_option() {
-        let mut spec = Spec::default();
-        type T = Option<String>;
-        T::generate_schema(&mut spec);
-    }
-}
-
-// /// A tag for a pet
-// #[derive(Debug, Clone)]
-// struct Tag {
-//     id: Option<i64>,
-//     name: Option<String>,
-// }
-
-// impl OpenapiSchema for Tag {
-//     fn generate_schema(
-//         spec: &mut openapi::v3_0::Spec,
-//     ) -> openapi::v3_0::ObjectOrReference<openapi::v3_0::Schema> {
-//         let ref_path = format!("#/components/schemas/{}", stringify!(Tag));
-
-//         let components = spec
-//             .components
-//             .get_or_insert_with(openapi::v3_0::Components::default);
-//         let schemas = components
-//             .schemas
-//             .get_or_insert_with(std::collections::BTreeMap::new);
-
-//         if !schemas.contains_key(stringify!(#name)) {
-//             let schema = openapi::v3_0::Schema::default();
-//             schemas.insert(
-//                 "Tag".into(),
-//                 openapi::v3_0::ObjectOrReference::Object(schema),
-//             );
-//         }
-//         openapi::v3_0::ObjectOrReference::Ref { ref_path }
-//     }
-// }
-
-// #[test]
-// fn test_generate_schema() {
-//     let mut spec = Spec::default();
-//     Tag::generate_schema(&mut spec);
-//     println!("{:#?}", spec);
-//     assert!(false);
-// }
