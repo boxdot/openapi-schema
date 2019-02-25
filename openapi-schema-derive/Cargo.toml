@@ -1,13 +1,14 @@
 [package]
-name = "openapi-schema"
+name = "openapi-schema-derive"
 version = "0.1.0"
 authors = ["boxdot <d@zerovolt.org>"]
 edition = "2018"
 
-[dependencies]
-openapi = { git = "https://github.com/boxdot/openapi", branch = "security-oauth2" }
-serde = { version = "1.0", features = ["derive"] }
-openapi-schema-derive = { path = "openapi-schema-derive" }
+[lib]
+proc-macro = true
 
-[dev-dependencies]
-serde_json = "1.0"
+[dependencies]
+syn = "0.15.26"
+quote = "0.6.11"
+openapi = { git = "https://github.com/boxdot/openapi", branch = "security-oauth2" }
+proc-macro2 = "0.4"
