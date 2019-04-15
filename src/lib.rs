@@ -61,10 +61,41 @@ impl OpenapiSchema for u32 {
     }
 }
 
+impl OpenapiSchema for u16 {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("number".into()),
+            format: Some("int32".into()),
+            minimum: Some(Value::Number(Number::from(0))),
+            ..Default::default()
+        })
+    }
+}
+
 impl OpenapiSchema for bool {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
             schema_type: Some("boolean".into()),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for f32 {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("number".into()),
+            format: Some("float".into()),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for f64 {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("number".into()),
+            format: Some("float".into()),
             ..Default::default()
         })
     }
