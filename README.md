@@ -66,7 +66,9 @@ The above example generates the following schema:
 * [x] `Vec<T>`
 * [x] Simple Rust structs (no tuple and unit structs)
 * [x] C-like Rust enums (no non-trivial variants)
-* [x] Doc comments are used as `title` and `description` of the type.
+* [x] Doc comments are used as `title` and `description` of the schema.
+* [x] Doc comments of attributes are used as `description` of the property.
+* [x] Support for `serde(flatten)`.
 
 TODO
 

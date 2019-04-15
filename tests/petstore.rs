@@ -168,42 +168,6 @@ fn test_pet_derive() {
     );
 }
 
-#[cfg(feature = "chrono")]
-#[test]
-fn test_datetime() {
-    #[derive(OpenapiSchema)]
-    #[allow(dead_code)]
-    struct DatesContainer {
-        date: chrono::Date<chrono::Utc>,
-        date_time: chrono::DateTime<chrono::Utc>,
-    }
-
-    let mut spec = Spec::default();
-    DatesContainer::generate_schema(&mut spec);
-    println!("{}", serde_json::to_string_pretty(&spec).unwrap());
-
-    let schemas = spec.components.as_ref().unwrap().schemas.as_ref().unwrap();
-    assert!(schemas.contains_key("DatesContainer"));
-
-    let c = match schemas.get("DatesContainer") {
-        Some(ObjectOrReference::Object(ref c)) => c,
-        _ => panic!("unexpected reference"),
-    };
-
-    assert_eq!(
-        c.required,
-        Some(vec![String::from("date"), String::from("date_time")])
-    );
-
-    let d = &c.properties.as_ref().unwrap().get("date").unwrap();
-    assert_eq!(d.schema_type, Some("string".to_owned()));
-    assert_eq!(d.format, Some("date".to_owned()));
-
-    let dt = &c.properties.as_ref().unwrap().get("date_time").unwrap();
-    assert_eq!(dt.schema_type, Some("string".to_owned()));
-    assert_eq!(dt.format, Some("date-time".to_owned()));
-}
-
 #[test]
 fn test_attr_doc() {
     let mut spec = Spec::default();
