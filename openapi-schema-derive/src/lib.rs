@@ -26,7 +26,7 @@ fn expand_derive_openapi_schema(input: &syn::DeriveInput) -> TokenStream {
 
 fn derive_for_struct(input: &syn::DeriveInput) -> TokenStream {
     let name = &input.ident;
-    let (title, desc) = doc_string(&input.attrs);
+    let (title, desc) = title_and_desc(&input.attrs);
     let properties = collect_struct_properties(&input.data);
 
     let gen = quote! {
@@ -48,9 +48,14 @@ fn derive_for_struct(input: &syn::DeriveInput) -> TokenStream {
                 if !already_generated {
                     let mut properties = std::collections::BTreeMap::new();
                     let mut required = Vec::new();
-                    for (name, prop, optional) in vec![#(#properties)*] {
+                    for (name, prop, doc, optional) in vec![#(#properties)*] {
                         let prop_schema = match prop {
-                            ObjectOrReference::Object(schema) => schema,
+                            ObjectOrReference::Object(mut schema) => {
+                                if !doc.is_empty() {
+                                    schema.description = Some(doc.into());
+                                }
+                                schema
+                            },
                             ObjectOrReference::Ref{ ref_path } => Schema {
                                 ref_path: Some(ref_path),
                                 ..Schema::default()
@@ -79,7 +84,7 @@ fn derive_for_struct(input: &syn::DeriveInput) -> TokenStream {
                         description: #desc,
                         properties,
                         required,
-                        ..openapi::v3_0::Schema::default()
+                        ..Default::default()
                     };
 
                     let components = spec.components.get_or_insert_with(Components::default);
@@ -105,11 +110,13 @@ fn collect_struct_properties(data: &Data) -> Vec<proc_macro2::TokenStream> {
             .map(|field| {
                 let field_name = &field.ident;
                 let ty = &field.ty;
+                let doc = doc_string(&field.attrs);
                 let optional = is_optional(&field);
                 let gen = quote! {
                     (
                         stringify!(#field_name),
                         <#ty as OpenapiSchema>::generate_schema(spec),
+                        #doc,
                         #optional,
                     ),
                 };
@@ -131,7 +138,18 @@ fn is_optional(field: &Field) -> bool {
 }
 
 /// Returns the summary of the doc (first paragraph) and the optional body (other paragraphs).
-fn doc_string(attrs: &[Attribute]) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
+fn title_and_desc(attrs: &[Attribute]) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
+    let doc = doc_string(attrs);
+    let mut split = doc.splitn(2, "\n\n");
+    match (split.next(), split.next()) {
+        (Some(title), Some(desc)) => (quote!(Some(#title.into())), quote!(Some(#desc.into()))),
+        (Some(desc), None) => (quote!(None), quote!(Some(#desc.into()))),
+        (None, None) => (quote!(None), quote!(None)),
+        (None, _) => unreachable!(),
+    }
+}
+
+fn doc_string(attrs: &[Attribute]) -> String {
     let lines: Vec<String> = attrs
         .iter()
         .filter_map(|attr| {
@@ -149,20 +167,12 @@ fn doc_string(attrs: &[Attribute]) -> (proc_macro2::TokenStream, proc_macro2::To
             }
         })
         .collect();
-    let doc = lines.join("\n");
-
-    let mut split = doc.splitn(2, "\n\n");
-    match (split.next(), split.next()) {
-        (Some(title), Some(desc)) => (quote!(Some(#title.into())), quote!(Some(#desc.into()))),
-        (Some(desc), None) => (quote!(None), quote!(Some(#desc.into()))),
-        (None, None) => (quote!(None), quote!(None)),
-        (None, _) => unreachable!(),
-    }
+    lines.join("\n")
 }
 
 fn derive_for_enum(input: &syn::DeriveInput) -> TokenStream {
     let name = &input.ident;
-    let (title, desc) = doc_string(&input.attrs);
+    let (title, desc) = title_and_desc(&input.attrs);
 
     let enum_values: Vec<_> = match input.data {
         Data::Enum(DataEnum { ref variants, .. }) => variants
@@ -202,7 +212,7 @@ fn derive_for_enum(input: &syn::DeriveInput) -> TokenStream {
                         description: #desc,
                         schema_type: Some("string".into()),
                         enum_values: Some(vec![#(#enum_values)*]),
-                        ..openapi::v3_0::Schema::default()
+                        ..Default::default()
                     };
 
                     let components = spec.components.get_or_insert_with(Components::default);
