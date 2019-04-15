@@ -131,3 +131,31 @@ where
         })
     }
 }
+
+#[cfg(feature = "chrono")]
+impl<T> OpenapiSchema for chrono::DateTime<T>
+where
+    T: chrono::TimeZone,
+{
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("string".into()),
+            format: Some("date-time".into()),
+            ..Default::default()
+        })
+    }
+}
+
+#[cfg(feature = "chrono")]
+impl<T> OpenapiSchema for chrono::Date<T>
+where
+    T: chrono::TimeZone,
+{
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("string".into()),
+            format: Some("date".into()),
+            ..Default::default()
+        })
+    }
+}
