@@ -9,8 +9,10 @@ default = ["chrono"]
 
 [dependencies]
 openapi = { git = "https://github.com/boxdot/openapi", rev = "e42474a" }
-# serde = { version = "1.0", features = ["derive"] }
 openapi-schema-derive = { path = "openapi-schema-derive" }
 serde_json = "1.0"
 
 chrono = { version = "0.4", features = ["serde"], optional = true }
+
+[dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
