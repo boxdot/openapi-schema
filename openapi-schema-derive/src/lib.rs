@@ -60,7 +60,10 @@ fn derive_for_struct(input: &syn::DeriveInput) -> TokenStream {
                                 .and_then(|c| c.schemas.as_mut())
                                 .expect("logic error: missing flatten schemas");
 
-                            let prop_schema = flatten_schemas.remove(name).expect("logic error");
+                            // we get the name of the type without the moduyles
+                            let key = name.split(" :: ").last().unwrap();
+
+                            let prop_schema = flatten_schemas.remove(key).expect(&format!("logic error, missing name {}", key));
                             let prop_schema = match prop_schema {
                                 ObjectOrReference::Object(schema) => schema,
                                 _ => panic!("unexpected reference"),
