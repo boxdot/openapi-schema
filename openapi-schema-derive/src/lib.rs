@@ -60,10 +60,9 @@ fn derive_for_struct(input: &syn::DeriveInput) -> TokenStream {
                                 .and_then(|c| c.schemas.as_mut())
                                 .expect("logic error: missing flatten schemas");
 
-                            // we get the name of the type without the moduyles
-                            let key = name.split(" :: ").last().unwrap();
-
-                            let prop_schema = flatten_schemas.remove(key).expect(&format!("logic error, missing name {}", key));
+                            let prop_schema = flatten_schemas
+                                .remove(name)
+                                .unwrap_or_else(|| panic!("logic error, missing: {}", name));
                             let prop_schema = match prop_schema {
                                 ObjectOrReference::Object(schema) => schema,
                                 _ => panic!("unexpected reference"),
@@ -152,6 +151,20 @@ fn collect_struct_properties(data: &Data) -> Vec<proc_macro2::TokenStream> {
             .iter()
             .map(|field| {
                 let field_name = &field.ident;
+
+                let type_name = match field.ty {
+                    Type::Path(ref field) => {
+                        &field
+                            .path
+                            .segments
+                            .last()
+                            .expect("invalid ty path")
+                            .value()
+                            .ident
+                    }
+                    _ => panic!("not supported type for field: {:?}", field_name),
+                };
+
                 let ty = &field.ty;
                 let doc = doc_string(&field.attrs);
                 let optional = is_optional(&field);
@@ -159,7 +172,7 @@ fn collect_struct_properties(data: &Data) -> Vec<proc_macro2::TokenStream> {
                 if flatten {
                     quote! {
                         (
-                            stringify!(#ty),
+                            stringify!(#type_name),
                             <#ty as OpenapiSchema>::generate_schema(flatten_spec),
                             #doc,
                             #optional,
