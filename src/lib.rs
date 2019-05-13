@@ -132,6 +132,29 @@ where
     }
 }
 
+impl<K, V> OpenapiSchema for std::collections::BTreeMap<K, V>
+where
+    V: OpenapiSchema,
+{
+    fn generate_schema(spec: &mut Spec) -> ObjectOrReference<Schema> {
+        let values = V::generate_schema(spec);
+
+        let items_schema = match values {
+            ObjectOrReference::Object(schema) => schema,
+            ObjectOrReference::Ref { ref_path } => Schema {
+                ref_path: Some(ref_path),
+                ..Schema::default()
+            },
+        };
+
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("object".into()),
+            additional_properties: Some(ObjectOrReference::Object(Box::new(items_schema))),
+            ..Schema::default()
+        })
+    }
+}
+
 #[cfg(feature = "chrono")]
 impl<T> OpenapiSchema for chrono::DateTime<T>
 where

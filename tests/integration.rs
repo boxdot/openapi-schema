@@ -1,4 +1,4 @@
-use openapi::v3_0::{ObjectOrReference, Spec};
+use openapi::v3_0::{ObjectOrReference, Schema, Spec};
 use openapi_schema::OpenapiSchema;
 use serde::Serialize;
 
@@ -119,4 +119,52 @@ fn test_flatten_nested_module() {
     assert!(properties.contains_key("inner"));
     assert!(!properties.contains_key("flatten"));
     assert!(!properties.contains_key("primitive_field"));
+}
+
+#[test]
+fn test_btreemap() {
+    #[derive(OpenapiSchema, Serialize)]
+    struct B {
+        val: String,
+    }
+
+    #[derive(OpenapiSchema, Serialize)]
+    struct A {
+        map_with_raw_type: std::collections::BTreeMap<String, String>,
+        map_with_complex_type: std::collections::BTreeMap<String, B>,
+    }
+
+    let mut spec = Spec::default();
+    A::generate_schema(&mut spec);
+    println!("{}", serde_json::to_string_pretty(&spec).unwrap());
+
+    let schemas = spec.components.as_ref().unwrap().schemas.as_ref().unwrap();
+    assert!(schemas.contains_key("A"));
+    assert!(schemas.contains_key("B"));
+
+    let a = match schemas.get("A") {
+        Some(ObjectOrReference::Object(ref user)) => user,
+        _ => panic!("unexpected reference"),
+    };
+
+    let properties = a.properties.as_ref().unwrap();
+
+    let ct = properties.get("map_with_complex_type").unwrap();
+    assert_eq!(ct.schema_type, Some("object".to_owned()));
+    assert_eq!(
+        ct.additional_properties,
+        Some(ObjectOrReference::Object(Box::new(Schema {
+            ref_path: Some("#/components/schemas/B".to_owned()),
+            ..Default::default()
+        })))
+    );
+    let rt = properties.get("map_with_raw_type").unwrap();
+    assert_eq!(rt.schema_type, Some("object".to_owned()));
+    assert_eq!(
+        rt.additional_properties,
+        Some(ObjectOrReference::Object(Box::new(Schema {
+            schema_type: Some("string".to_owned()),
+            ..Default::default()
+        })))
+    );
 }
