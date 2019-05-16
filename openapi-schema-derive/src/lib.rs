@@ -265,12 +265,13 @@ fn derive_for_enum(input: &syn::DeriveInput) -> TokenStream {
         Data::Enum(DataEnum { ref variants, .. }) => variants
             .iter()
             .map(|var| {
-                if !var.attrs.is_empty() {
-                    panic!("cannot derive OpenapiSchema for non-trivial enums");
-                }
+                let doc = doc_string(&var.attrs);
                 let ident = &var.ident;
                 quote! {
-                    String::from(stringify!(#ident)),
+                    (
+                        String::from(stringify!(#ident)),
+                        #doc
+                    ),
                 }
             })
             .collect(),
@@ -294,11 +295,29 @@ fn derive_for_enum(input: &syn::DeriveInput) -> TokenStream {
                     .unwrap_or(false);
 
                 if !already_generated {
+                    let values_and_doc = vec![#(#enum_values)*];
+
+                    let values_desc = values_and_doc.iter()
+                        .filter(|(_, doc)| !doc.is_empty())
+                        .map(|(value, doc)| format!("* {}: {}", &value, &doc))
+                        .collect::<Vec<_>>().join("\n");
+
+                    let desc = #desc;
+
+                    let full_desc = if !values_desc.is_empty() {
+                        match desc {
+                            Some(desc) => Some(format!("{}\n{}", desc, values_desc)),
+                            None => Some(values_desc)
+                        }
+                    } else {
+                        desc
+                    };
+
                     let schema = Schema {
                         title: #title,
-                        description: #desc,
+                        description: full_desc,
                         schema_type: Some("string".into()),
-                        enum_values: Some(vec![#(#enum_values)*]),
+                        enum_values: Some(values_and_doc.into_iter().map(|(value, _)| value).collect()),
                         ..Default::default()
                     };
 
