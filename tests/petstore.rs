@@ -114,7 +114,7 @@ fn test_tag_derive() {
 
     assert!(properties.contains_key("id"));
     let id = properties.get("id").unwrap();
-    assert_eq!(id.schema_type, Some("number".into()));
+    assert_eq!(id.schema_type, Some("integer".into()));
     assert_eq!(id.format, Some("int64".into()));
 
     assert!(properties.contains_key("name"));

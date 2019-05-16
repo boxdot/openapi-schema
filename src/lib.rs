@@ -22,7 +22,7 @@ impl OpenapiSchema for String {
 impl OpenapiSchema for i64 {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
-            schema_type: Some("number".into()),
+            schema_type: Some("integer".into()),
             format: Some("int64".into()),
             ..Default::default()
         })
@@ -32,9 +32,28 @@ impl OpenapiSchema for i64 {
 impl OpenapiSchema for u64 {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
-            schema_type: Some("number".into()),
+            schema_type: Some("integer".into()),
             format: Some("int64".into()),
             minimum: Some(Value::Number(Number::from(0))),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for usize {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("integer".into()),
+            minimum: Some(Value::Number(Number::from(0))),
+            ..Default::default()
+        })
+    }
+}
+
+impl OpenapiSchema for isize {
+    fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
+        ObjectOrReference::Object(Schema {
+            schema_type: Some("integer".into()),
             ..Default::default()
         })
     }
@@ -43,7 +62,7 @@ impl OpenapiSchema for u64 {
 impl OpenapiSchema for i32 {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
-            schema_type: Some("number".into()),
+            schema_type: Some("integer".into()),
             format: Some("int32".into()),
             ..Default::default()
         })
@@ -53,7 +72,7 @@ impl OpenapiSchema for i32 {
 impl OpenapiSchema for u32 {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
-            schema_type: Some("number".into()),
+            schema_type: Some("integer".into()),
             format: Some("int32".into()),
             minimum: Some(Value::Number(Number::from(0))),
             ..Default::default()
@@ -64,7 +83,7 @@ impl OpenapiSchema for u32 {
 impl OpenapiSchema for u16 {
     fn generate_schema(_spec: &mut Spec) -> ObjectOrReference<Schema> {
         ObjectOrReference::Object(Schema {
-            schema_type: Some("number".into()),
+            schema_type: Some("integer".into()),
             format: Some("int32".into()),
             minimum: Some(Value::Number(Number::from(0))),
             ..Default::default()
